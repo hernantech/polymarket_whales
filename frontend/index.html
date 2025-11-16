@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polymarket Whales</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-align: center;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .status {
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        .badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+        }
+        .badge.success {
+            background: #10b981;
+        }
+        .badge.error {
+            background: #ef4444;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐋 Polymarket Whales</h1>
+        <p>Welcome to the Polymarket Whales tracking application. This dashboard monitors large traders and their activities.</p>
+
+        <div class="status">
+            <div class="status-item">
+                <span>Frontend Status</span>
+                <span class="badge success">Running</span>
+            </div>
+            <div class="status-item">
+                <span>Backend API</span>
+                <span class="badge" id="backend-status">Checking...</span>
+            </div>
+            <div class="status-item">
+                <span>Database</span>
+                <span class="badge" id="db-status">Checking...</span>
+            </div>
+        </div>
+
+        <button onclick="checkStatus()">Refresh Status</button>
+    </div>
+
+    <script>
+        async function checkStatus() {
+            try {
+                // Check backend health
+                const healthResponse = await fetch('/api/health');
+                const healthData = await healthResponse.json();
+
+                const backendBadge = document.getElementById('backend-status');
+                const dbBadge = document.getElementById('db-status');
+
+                if (healthResponse.ok) {
+                    backendBadge.textContent = 'Running';
+                    backendBadge.className = 'badge success';
+
+                    if (healthData.database === 'healthy') {
+                        dbBadge.textContent = 'Connected';
+                        dbBadge.className = 'badge success';
+                    } else {
+                        dbBadge.textContent = 'Error';
+                        dbBadge.className = 'badge error';
+                    }
+                } else {
+                    backendBadge.textContent = 'Error';
+                    backendBadge.className = 'badge error';
+                    dbBadge.textContent = 'Unknown';
+                    dbBadge.className = 'badge';
+                }
+            } catch (error) {
+                document.getElementById('backend-status').textContent = 'Offline';
+                document.getElementById('backend-status').className = 'badge error';
+                document.getElementById('db-status').textContent = 'Unknown';
+                document.getElementById('db-status').className = 'badge';
+            }
+        }
+
+        // Check status on load
+        checkStatus();
+    </script>
+</body>
+</html>

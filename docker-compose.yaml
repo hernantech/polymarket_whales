@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  database:
+    image: postgres:15-alpine
+    container_name: polymarket_whales_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: polymarket_whales
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - polymarket_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: polymarket_whales_backend
+    restart: unless-stopped
+    environment:
+      FLASK_APP: app.py
+      FLASK_ENV: ${FLASK_ENV:-production}
+      DATABASE_HOST: database
+      DATABASE_PORT: 5432
+      DATABASE_NAME: polymarket_whales
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: ${DB_PASSWORD:-changeme}
+    ports:
+      - "5000:5000"
+    depends_on:
+      database:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    networks:
+      - polymarket_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: polymarket_whales_frontend
+    restart: unless-stopped
+    environment:
+      BACKEND_API_URL: http://backend:5000
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - polymarket_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  polymarket_network:
+    driver: bridge
